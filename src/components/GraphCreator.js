@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 
 const GraphCreator = () => {
   const [nodes, setNodes] = useState([]);
@@ -52,11 +52,7 @@ const GraphCreator = () => {
     },
   };
 
-  useEffect(() => {
-    drawGraph();
-  }, [nodes, edges, hamiltonCycle]);
-
-  const drawGraph = () => {
+  const drawGraph = useCallback(() => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -94,7 +90,12 @@ const GraphCreator = () => {
       ctx.textBaseline = 'middle';
       ctx.fillText(ALPHABET[index], node.x, node.y);
     });
-  };
+    // eslint-disable-next-line 
+  }, [nodes, edges, hamiltonCycle]); // Include dependencies
+
+  useEffect(() => {
+    drawGraph();
+  }, [drawGraph]); // Now drawGraph is included
 
   const isEdgeInCycle = (edge) => {
     if (hamiltonCycle.length < 2) return false;
@@ -173,7 +174,6 @@ const GraphCreator = () => {
       alert('Error communicating with the server');
     }
   };
-  
 
   const clearGraph = () => {
     setNodes([]);
