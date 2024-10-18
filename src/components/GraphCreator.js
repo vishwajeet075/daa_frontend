@@ -2,116 +2,78 @@ import React, { useState, useRef, useEffect } from 'react';
 
 const GraphCreator = () => {
   const [nodes, setNodes] = useState([]);
-  const [links, setLinks] = useState([]);
+  const [edges, setEdges] = useState([]);
   const [selectedTool, setSelectedTool] = useState(null);
-  const [linkStart, setLinkStart] = useState(null);
+  const [edgeStart, setEdgeStart] = useState(null);
   const [hamiltonCycle, setHamiltonCycle] = useState([]);
   const canvasRef = useRef(null);
 
   const NODE_RADIUS = 25;
   const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const NODE_COLORS = [
+    '#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8',
+    '#F7DC6F', '#BB8FCE', '#82E0AA', '#F1948A', '#85C1E9'
+  ];
 
   const styles = {
     container: {
       padding: '20px',
       fontFamily: 'Arial, sans-serif',
+      maxWidth: '800px',
+      margin: '0 auto',
     },
     toolbox: {
       marginBottom: '20px',
-      padding: '10px',
-      backgroundColor: '#f5f5f5',
-      borderRadius: '8px',
-      boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+      display: 'flex',
+      justifyContent: 'space-between',
     },
-    toolButton: {
-      padding: '8px 16px',
-      margin: '0 10px',
-      border: 'none',
-      borderRadius: '4px',
-      cursor: 'pointer',
+    button: {
+      padding: '10px 15px',
       fontSize: '14px',
-      backgroundColor: '#fff',
-      border: '1px solid #ddd',
+      cursor: 'pointer',
+      border: 'none',
+      borderRadius: '5px',
+      transition: 'all 0.3s',
+      backgroundColor: '#f0f0f0',
+      color: '#333',
     },
     activeButton: {
-      backgroundColor: '#0066cc',
-      color: '#fff',
-      border: '1px solid #0066cc',
+      backgroundColor: '#4CAF50',
+      color: 'white',
     },
     canvasContainer: {
       border: '2px solid #ddd',
       borderRadius: '8px',
       overflow: 'hidden',
+      boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
     },
     canvas: {
-      background: '#fff',
-    },
-    findButton: {
-      padding: '10px 20px',
-      backgroundColor: '#28a745',
-      color: '#fff',
-      border: 'none',
-      borderRadius: '4px',
-      cursor: 'pointer',
-      fontSize: '14px',
-      marginTop: '20px',
-    },
-    clearButton: {
-      padding: '10px 20px',
-      backgroundColor: '#dc3545',
-      color: '#fff',
-      border: 'none',
-      borderRadius: '4px',
-      cursor: 'pointer',
-      fontSize: '14px',
-      marginTop: '20px',
-      marginLeft: '10px',
+      background: '#f8f8f8',
     },
   };
 
   useEffect(() => {
     drawGraph();
-  }, [nodes, links, hamiltonCycle]);
+  }, [nodes, edges, hamiltonCycle]);
 
   const drawGraph = () => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Draw links
-    links.forEach(link => {
-      const start = nodes[link.from];
-      const end = nodes[link.to];
+    // Draw edges
+    edges.forEach(edge => {
+      const start = nodes[edge[0]];
+      const end = nodes[edge[1]];
 
       ctx.beginPath();
       ctx.moveTo(start.x, start.y);
       ctx.lineTo(end.x, end.y);
 
-      const isInHamiltonCycle = isLinkInCycle(link);
-      ctx.strokeStyle = isInHamiltonCycle ? '#28a745' : '#666';
+      const isInHamiltonCycle = isEdgeInCycle(edge);
+      ctx.strokeStyle = isInHamiltonCycle ? '#4CAF50' : '#999';
       ctx.lineWidth = isInHamiltonCycle ? 3 : 2;
       ctx.stroke();
-
-      // Draw cost
-      const midX = (start.x + end.x) / 2;
-      const midY = (start.y + end.y) / 2;
-
-      ctx.fillStyle = '#fff';
-      const costText = link.cost.toString();
-      const textMetrics = ctx.measureText(costText);
-      const padding = 4;
-      ctx.fillRect(
-        midX - textMetrics.width / 2 - padding,
-        midY - 10 - padding,
-        textMetrics.width + padding * 2,
-        20 + padding * 2
-      );
-
-      ctx.fillStyle = '#000';
-      ctx.font = '14px Arial';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(costText, midX, midY);
     });
 
     // Draw nodes
@@ -119,14 +81,14 @@ const GraphCreator = () => {
       ctx.beginPath();
       ctx.arc(node.x, node.y, NODE_RADIUS, 0, 2 * Math.PI);
 
-      ctx.fillStyle = hamiltonCycle.includes(index) ? '#e6ffe6' : '#fff';
+      ctx.fillStyle = NODE_COLORS[index % NODE_COLORS.length];
       ctx.fill();
 
-      ctx.strokeStyle = hamiltonCycle.includes(index) ? '#28a745' : '#000';
+      ctx.strokeStyle = hamiltonCycle.includes(index) ? '#4CAF50' : '#333';
       ctx.lineWidth = 2;
       ctx.stroke();
 
-      ctx.fillStyle = '#000';
+      ctx.fillStyle = '#fff';
       ctx.font = 'bold 16px Arial';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
@@ -134,19 +96,19 @@ const GraphCreator = () => {
     });
   };
 
-  const isLinkInCycle = (link) => {
+  const isEdgeInCycle = (edge) => {
     if (hamiltonCycle.length < 2) return false;
     for (let i = 0; i < hamiltonCycle.length - 1; i++) {
       if (
-        (hamiltonCycle[i] === link.from && hamiltonCycle[i + 1] === link.to) ||
-        (hamiltonCycle[i] === link.to && hamiltonCycle[i + 1] === link.from)
+        (hamiltonCycle[i] === edge[0] && hamiltonCycle[i + 1] === edge[1]) ||
+        (hamiltonCycle[i] === edge[1] && hamiltonCycle[i + 1] === edge[0])
       ) {
         return true;
       }
     }
     if (
-      (hamiltonCycle[hamiltonCycle.length - 1] === link.from && hamiltonCycle[0] === link.to) ||
-      (hamiltonCycle[hamiltonCycle.length - 1] === link.to && hamiltonCycle[0] === link.from)
+      (hamiltonCycle[hamiltonCycle.length - 1] === edge[0] && hamiltonCycle[0] === edge[1]) ||
+      (hamiltonCycle[hamiltonCycle.length - 1] === edge[1] && hamiltonCycle[0] === edge[0])
     ) {
       return true;
     }
@@ -164,21 +126,13 @@ const GraphCreator = () => {
 
     if (selectedTool === 'node' && clickedNodeIndex === -1) {
       setNodes([...nodes, { x, y }]);
-    } else if (selectedTool === 'link') {
+    } else if (selectedTool === 'edge') {
       if (clickedNodeIndex !== -1) {
-        if (linkStart === null) {
-          setLinkStart(clickedNodeIndex);
-        } else if (linkStart !== clickedNodeIndex) {
-          const cost = prompt('Enter cost for this link:', '1');
-          if (cost !== null) {
-            const numericCost = parseInt(cost) || 1;
-            setLinks([...links, {
-              from: linkStart,
-              to: clickedNodeIndex,
-              cost: numericCost
-            }]);
-          }
-          setLinkStart(null);
+        if (edgeStart === null) {
+          setEdgeStart(clickedNodeIndex);
+        } else if (edgeStart !== clickedNodeIndex) {
+          setEdges([...edges, [edgeStart, clickedNodeIndex]]);
+          setEdgeStart(null);
         }
       }
     }
@@ -186,41 +140,45 @@ const GraphCreator = () => {
 
   const findHamiltonianCycle = async () => {
     try {
-      const response = await fetch('https://bookish-palm-tree-5gq6jjj949ggh7g5v-8000.app.github.dev/find-hamilton', {
+      const response = await fetch('https://daa-backend.onrender.com/find-hamilton', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           nodes: nodes.map((_, index) => ALPHABET[index]),
-          links: links.map(link => ({
-            from: ALPHABET[link.from],
-            to: ALPHABET[link.to],
-            cost: link.cost
+          links: edges.map(edge => ({
+            from: ALPHABET[edge[0]],
+            to: ALPHABET[edge[1]]
           }))
         }),
       });
-
+  
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+  
       const data = await response.json();
+  
       if (data.cycle) {
-        const cycleIndices = data.cycle.map(node =>
-          ALPHABET.indexOf(node)
-        );
+        const cycleIndices = data.cycle.map(node => ALPHABET.indexOf(node));
         setHamiltonCycle(cycleIndices);
+        alert('Hamiltonian cycle found!');
       } else {
-        alert('No Hamiltonian cycle found in this graph');
-        setHamiltonCycle([]);
+        alert(data.message || 'No Hamiltonian cycle found in this graph');
+        setHamiltonCycle([]);  // Clear any previously found cycle
       }
     } catch (error) {
       console.error('Error finding Hamiltonian cycle:', error);
       alert('Error communicating with the server');
     }
   };
+  
 
   const clearGraph = () => {
     setNodes([]);
-    setLinks([]);
-    setLinkStart(null);
+    setEdges([]);
+    setEdgeStart(null);
     setHamiltonCycle([]);
     setSelectedTool(null);
   };
@@ -230,27 +188,39 @@ const GraphCreator = () => {
       <div style={styles.toolbox}>
         <button
           style={{
-            ...styles.toolButton,
+            ...styles.button,
             ...(selectedTool === 'node' ? styles.activeButton : {})
           }}
           onClick={() => {
             setSelectedTool('node');
-            setLinkStart(null);
+            setEdgeStart(null);
           }}
         >
           Add Node
         </button>
         <button
           style={{
-            ...styles.toolButton,
-            ...(selectedTool === 'link' ? styles.activeButton : {})
+            ...styles.button,
+            ...(selectedTool === 'edge' ? styles.activeButton : {})
           }}
           onClick={() => {
-            setSelectedTool('link');
-            setLinkStart(null);
+            setSelectedTool('edge');
+            setEdgeStart(null);
           }}
         >
-          Add Link
+          Add Edge
+        </button>
+        <button
+          style={styles.button}
+          onClick={findHamiltonianCycle}
+        >
+          Find Hamiltonian Cycle
+        </button>
+        <button
+          style={styles.button}
+          onClick={clearGraph}
+        >
+          Clear Graph
         </button>
       </div>
 
@@ -263,19 +233,6 @@ const GraphCreator = () => {
           style={styles.canvas}
         />
       </div>
-
-      <button
-        style={styles.findButton}
-        onClick={findHamiltonianCycle}
-      >
-        Find Hamiltonian Cycle
-      </button>
-      <button
-        style={styles.clearButton}
-        onClick={clearGraph}
-      >
-        Clear Graph
-      </button>
     </div>
   );
 };
