@@ -1,4 +1,37 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import styled from 'styled-components';
+import { Button, AppBar, Toolbar, Typography, Container, Box } from '@mui/material';
+import { createTheme, ThemeProvider } from '@mui/material/styles';
+
+const theme = createTheme({
+  palette: {
+    primary: {
+      main: '#3f51b5',
+    },
+    secondary: {
+      main: '#f50057',
+    },
+  },
+});
+
+const StyledContainer = styled(Container)`
+  padding: 20px;
+  max-width: 100% !important;
+`;
+
+const CanvasContainer = styled(Box)`
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  margin-top: 20px;
+`;
+
+const StyledCanvas = styled.canvas`
+  background: #f8f8f8;
+  width: 100%;
+  height: auto;
+`;
 
 const GraphCreator = () => {
   const [nodes, setNodes] = useState([]);
@@ -14,43 +47,6 @@ const GraphCreator = () => {
     '#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8',
     '#F7DC6F', '#BB8FCE', '#82E0AA', '#F1948A', '#85C1E9'
   ];
-
-  const styles = {
-    container: {
-      padding: '20px',
-      fontFamily: 'Arial, sans-serif',
-      maxWidth: '800px',
-      margin: '0 auto',
-    },
-    toolbox: {
-      marginBottom: '20px',
-      display: 'flex',
-      justifyContent: 'space-between',
-    },
-    button: {
-      padding: '10px 15px',
-      fontSize: '14px',
-      cursor: 'pointer',
-      border: 'none',
-      borderRadius: '5px',
-      transition: 'all 0.3s',
-      backgroundColor: '#f0f0f0',
-      color: '#333',
-    },
-    activeButton: {
-      backgroundColor: '#4CAF50',
-      color: 'white',
-    },
-    canvasContainer: {
-      border: '2px solid #ddd',
-      borderRadius: '8px',
-      overflow: 'hidden',
-      boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-    },
-    canvas: {
-      background: '#f8f8f8',
-    },
-  };
 
   const drawGraph = useCallback(() => {
     const canvas = canvasRef.current;
@@ -90,12 +86,11 @@ const GraphCreator = () => {
       ctx.textBaseline = 'middle';
       ctx.fillText(ALPHABET[index], node.x, node.y);
     });
-    // eslint-disable-next-line 
-  }, [nodes, edges, hamiltonCycle]); // Include dependencies
+  }, [nodes, edges, hamiltonCycle]);
 
   useEffect(() => {
     drawGraph();
-  }, [drawGraph]); // Now drawGraph is included
+  }, [drawGraph]);
 
   const isEdgeInCycle = (edge) => {
     if (hamiltonCycle.length < 2) return false;
@@ -118,8 +113,8 @@ const GraphCreator = () => {
 
   const handleCanvasClick = (e) => {
     const rect = canvasRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const x = (e.clientX - rect.left) * (canvasRef.current.width / rect.width);
+    const y = (e.clientY - rect.top) * (canvasRef.current.height / rect.height);
 
     const clickedNodeIndex = nodes.findIndex(node =>
       Math.hypot(node.x - x, node.y - y) < NODE_RADIUS
@@ -167,7 +162,7 @@ const GraphCreator = () => {
         alert('Hamiltonian cycle found!');
       } else {
         alert(data.message || 'No Hamiltonian cycle found in this graph');
-        setHamiltonCycle([]);  // Clear any previously found cycle
+        setHamiltonCycle([]);
       }
     } catch (error) {
       console.error('Error finding Hamiltonian cycle:', error);
@@ -183,57 +178,76 @@ const GraphCreator = () => {
     setSelectedTool(null);
   };
 
-  return (
-    <div style={styles.container}>
-      <div style={styles.toolbox}>
-        <button
-          style={{
-            ...styles.button,
-            ...(selectedTool === 'node' ? styles.activeButton : {})
-          }}
-          onClick={() => {
-            setSelectedTool('node');
-            setEdgeStart(null);
-          }}
-        >
-          Add Node
-        </button>
-        <button
-          style={{
-            ...styles.button,
-            ...(selectedTool === 'edge' ? styles.activeButton : {})
-          }}
-          onClick={() => {
-            setSelectedTool('edge');
-            setEdgeStart(null);
-          }}
-        >
-          Add Edge
-        </button>
-        <button
-          style={styles.button}
-          onClick={findHamiltonianCycle}
-        >
-          Find Hamiltonian Cycle
-        </button>
-        <button
-          style={styles.button}
-          onClick={clearGraph}
-        >
-          Clear Graph
-        </button>
-      </div>
+  useEffect(() => {
+    const resizeCanvas = () => {
+      const canvas = canvasRef.current;
+      const container = canvas.parentElement;
+      canvas.width = container.clientWidth;
+      canvas.height = container.clientHeight;
+      drawGraph();
+    };
 
-      <div style={styles.canvasContainer}>
-        <canvas
-          ref={canvasRef}
-          width={800}
-          height={600}
-          onClick={handleCanvasClick}
-          style={styles.canvas}
-        />
-      </div>
-    </div>
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    return () => window.removeEventListener('resize', resizeCanvas);
+  }, [drawGraph]);
+
+  return (
+    <ThemeProvider theme={theme}>
+      <AppBar position="static">
+        <Toolbar>
+          <Typography variant="h6">
+            Graph Creator
+          </Typography>
+        </Toolbar>
+      </AppBar>
+      <StyledContainer>
+        <Box display="flex" flexWrap="wrap" justifyContent="space-between" mb={2}>
+          <Button
+            variant={selectedTool === 'node' ? 'contained' : 'outlined'}
+            color="primary"
+            onClick={() => {
+              setSelectedTool('node');
+              setEdgeStart(null);
+            }}
+          >
+            Add Node
+          </Button>
+          <Button
+            variant={selectedTool === 'edge' ? 'contained' : 'outlined'}
+            color="primary"
+            onClick={() => {
+              setSelectedTool('edge');
+              setEdgeStart(null);
+            }}
+          >
+            Add Edge
+          </Button>
+          <Button
+            variant="contained"
+            color="secondary"
+            onClick={findHamiltonianCycle}
+          >
+            Find Hamiltonian Cycle
+          </Button>
+          <Button
+            variant="outlined"
+            color="secondary"
+            onClick={clearGraph}
+          >
+            Clear Graph
+          </Button>
+        </Box>
+
+        <CanvasContainer>
+          <StyledCanvas
+            ref={canvasRef}
+            onClick={handleCanvasClick}
+          />
+        </CanvasContainer>
+      </StyledContainer>
+    </ThemeProvider>
   );
 };
 
