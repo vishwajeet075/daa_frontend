@@ -82,11 +82,11 @@ const GraphCreator = () => {
     links.forEach(link => {
       const start = nodes[link.from];
       const end = nodes[link.to];
-      
+
       ctx.beginPath();
       ctx.moveTo(start.x, start.y);
       ctx.lineTo(end.x, end.y);
-      
+
       const isInHamiltonCycle = isLinkInCycle(link);
       ctx.strokeStyle = isInHamiltonCycle ? '#28a745' : '#666';
       ctx.lineWidth = isInHamiltonCycle ? 3 : 2;
@@ -95,17 +95,16 @@ const GraphCreator = () => {
       // Draw cost
       const midX = (start.x + end.x) / 2;
       const midY = (start.y + end.y) / 2;
-      
-      // Draw cost background
+
       ctx.fillStyle = '#fff';
       const costText = link.cost.toString();
       const textMetrics = ctx.measureText(costText);
       const padding = 4;
       ctx.fillRect(
-        midX - textMetrics.width/2 - padding,
+        midX - textMetrics.width / 2 - padding,
         midY - 10 - padding,
-        textMetrics.width + padding*2,
-        20 + padding*2
+        textMetrics.width + padding * 2,
+        20 + padding * 2
       );
 
       ctx.fillStyle = '#000';
@@ -119,48 +118,20 @@ const GraphCreator = () => {
     nodes.forEach((node, index) => {
       ctx.beginPath();
       ctx.arc(node.x, node.y, NODE_RADIUS, 0, 2 * Math.PI);
-      
-      // Fill with white or highlight if part of Hamilton cycle
+
       ctx.fillStyle = hamiltonCycle.includes(index) ? '#e6ffe6' : '#fff';
       ctx.fill();
-      
+
       ctx.strokeStyle = hamiltonCycle.includes(index) ? '#28a745' : '#000';
       ctx.lineWidth = 2;
       ctx.stroke();
 
-      // Node label
       ctx.fillStyle = '#000';
       ctx.font = 'bold 16px Arial';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(ALPHABET[index], node.x, node.y);
     });
-
-    // Draw line preview when creating a link
-    if (selectedTool === 'link' && linkStart !== null) {
-      const start = nodes[linkStart];
-      const rect = canvas.getBoundingClientRect();
-      const mouseX = lastMousePos.x - rect.left;
-      const mouseY = lastMousePos.y - rect.top;
-
-      ctx.beginPath();
-      ctx.moveTo(start.x, start.y);
-      ctx.lineTo(mouseX, mouseY);
-      ctx.strokeStyle = '#999';
-      ctx.setLineDash([5, 5]);
-      ctx.lineWidth = 2;
-      ctx.stroke();
-      ctx.setLineDash([]);
-    }
-  };
-
-  const [lastMousePos, setLastMousePos] = useState({ x: 0, y: 0 });
-
-  const handleMouseMove = (e) => {
-    setLastMousePos({ x: e.clientX, y: e.clientY });
-    if (selectedTool === 'link' && linkStart !== null) {
-      drawGraph();
-    }
   };
 
   const isLinkInCycle = (link) => {
@@ -173,7 +144,6 @@ const GraphCreator = () => {
         return true;
       }
     }
-    // Check connection between last and first node
     if (
       (hamiltonCycle[hamiltonCycle.length - 1] === link.from && hamiltonCycle[0] === link.to) ||
       (hamiltonCycle[hamiltonCycle.length - 1] === link.to && hamiltonCycle[0] === link.from)
@@ -188,20 +158,17 @@ const GraphCreator = () => {
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
-    // Check if clicked on existing node
     const clickedNodeIndex = nodes.findIndex(node =>
       Math.hypot(node.x - x, node.y - y) < NODE_RADIUS
     );
 
     if (selectedTool === 'node' && clickedNodeIndex === -1) {
-      // Add new node
       setNodes([...nodes, { x, y }]);
     } else if (selectedTool === 'link') {
       if (clickedNodeIndex !== -1) {
         if (linkStart === null) {
           setLinkStart(clickedNodeIndex);
         } else if (linkStart !== clickedNodeIndex) {
-          // Prompt for cost
           const cost = prompt('Enter cost for this link:', '1');
           if (cost !== null) {
             const numericCost = parseInt(cost) || 1;
@@ -219,7 +186,7 @@ const GraphCreator = () => {
 
   const findHamiltonianCycle = async () => {
     try {
-      const response = await fetch('http://localhost:8000/find-hamilton', {
+      const response = await fetch('https://bookish-palm-tree-5gq6jjj949ggh7g5v-8000.app.github.dev/find-hamilton', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -233,11 +200,10 @@ const GraphCreator = () => {
           }))
         }),
       });
-      
+
       const data = await response.json();
       if (data.cycle) {
-        // Convert letters back to indices
-        const cycleIndices = data.cycle.map(node => 
+        const cycleIndices = data.cycle.map(node =>
           ALPHABET.indexOf(node)
         );
         setHamiltonCycle(cycleIndices);
@@ -294,7 +260,6 @@ const GraphCreator = () => {
           width={800}
           height={600}
           onClick={handleCanvasClick}
-          onMouseMove={handleMouseMove}
           style={styles.canvas}
         />
       </div>
