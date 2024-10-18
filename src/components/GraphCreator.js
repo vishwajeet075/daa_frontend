@@ -16,6 +16,7 @@ import TimelineIcon from "@mui/icons-material/Timeline";
 import ClearIcon from "@mui/icons-material/Clear";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import { jsPDF } from "jspdf";
+import axios from "axios";
 
 const theme = createTheme({
   palette: {
@@ -97,6 +98,28 @@ const GraphCreator = () => {
     "#FF6B6B", "#4ECDC4", "#45B7D1", "#FFA07A", "#98D8C8",
     "#F7DC6F", "#BB8FCE", "#82E0AA", "#F1948A", "#85C1E9",
   ];
+
+
+    // Send graph data to the backend
+    const checkHamiltonianCycle = async () => {
+      try {
+        const response = await axios.post("https://daa-backend.onrender.com/find-hamilton", {
+          nodes,
+          edges,
+        });
+        const { cycle, cycleText } = response.data;
+  
+        if (cycle.length > 0) {
+          setHamiltonCycle(cycle);
+          setCyclePathText(cycleText);
+        } else {
+          setHamiltonCycle([]);
+          setCyclePathText("No Hamiltonian Cycle found.");
+        }
+      } catch (error) {
+        console.error("Error checking Hamiltonian Cycle:", error);
+      }
+    };
 
   const isEdgeInCycle = useCallback(
     (edge) => {
@@ -341,6 +364,15 @@ const GraphCreator = () => {
             >
               Add Edge
             </Button>
+
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={checkHamiltonianCycle}
+            >
+              Check Hamiltonian Cycle
+            </Button>
+
             <Button
               variant="contained"
               color="secondary"
