@@ -103,11 +103,19 @@ const GraphCreator = () => {
     // Send graph data to the backend
     const checkHamiltonianCycle = async () => {
       try {
+
+        // Log nodes and edges for inspection
+    console.log("Nodes:", nodes);
+    console.log("Edges:", edges);
+    
         const response = await axios.post("https://daa-backend.onrender.com/find-hamilton", {
           nodes,
           edges,
         });
         const { cycle, cycleText } = response.data;
+
+          // Log cycle to console for debugging
+    console.log("Hamiltonian Cycle Path received from backend:", cycle);
   
         if (cycle.length > 0) {
           setHamiltonCycle(cycle);
