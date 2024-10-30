@@ -82,6 +82,7 @@ const CyclePathText = styled(Typography)`
 `;
 
 const GraphCreator = () => {
+  
   const [nodes, setNodes] = useState([]);
   const [edges, setEdges] = useState([]);
   const [selectedTool, setSelectedTool] = useState(null);
@@ -91,6 +92,7 @@ const GraphCreator = () => {
   const [cyclePathText, setCyclePathText] = useState("");
   const [anchorEl, setAnchorEl] = useState(null);
   const canvasRef = useRef(null);
+  const [totalCycles, setTotalCycles] = useState(0); // New state for total cycles
 
   const NODE_RADIUS = 20;
   const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -98,6 +100,8 @@ const GraphCreator = () => {
     "#FF6B6B", "#4ECDC4", "#45B7D1", "#FFA07A", "#98D8C8",
     "#F7DC6F", "#BB8FCE", "#82E0AA", "#F1948A", "#85C1E9",
   ];
+
+  
 
 
     // Send graph data to the backend
@@ -112,7 +116,7 @@ const GraphCreator = () => {
           nodes,
           edges,
         });
-        const { cycle, cycleText } = response.data;
+        const { cycle, cycleText,totalCycles} = response.data;
 
           // Log cycle to console for debugging
     console.log("Hamiltonian Cycle Path received from backend:", cycle);
@@ -120,6 +124,7 @@ const GraphCreator = () => {
         if (cycle.length > 0) {
           setHamiltonCycle(cycle);
           setCyclePathText(cycleText);
+          setTotalCycles(totalCycles);
         } else {
           setHamiltonCycle([]);
           setCyclePathText("No Hamiltonian Cycle found.");
@@ -156,7 +161,11 @@ const GraphCreator = () => {
   const drawGraph = useCallback(() => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
+    
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+   const isMobile = window.innerWidth <= 768;
+   const NODE_RADIUS = isMobile ? 30 : 20; // Increase radius for mobile
 
     // Draw edges
     edges.forEach((edge, index) => {
@@ -276,6 +285,8 @@ const GraphCreator = () => {
       }
     }
   };
+
+  
 
   const distToSegment = (p, v, w) => {
     const l2 = (v.x - w.x) ** 2 + (v.y - w.y) ** 2;
@@ -398,6 +409,7 @@ const GraphCreator = () => {
                 setEdges([]);
                 setHamiltonCycle([]);
                 setCyclePathText("");
+                setTotalCycles(0);
               }}
             >
               Clear
@@ -412,8 +424,15 @@ const GraphCreator = () => {
             />
           </CanvasContainer>
           {cyclePathText && (
-            <CyclePathText variant="body1">{cyclePathText}</CyclePathText>
-          )}
+  <div>
+    <CyclePathText variant="body1">{cyclePathText}</CyclePathText>
+    {totalCycles > 0 && (
+      <CyclePathText variant="body1">
+        Total Hamiltonian Cycles: {totalCycles}
+      </CyclePathText>
+    )}
+  </div>
+)}
         </Content>
       </AppContainer>
     </ThemeProvider>
