@@ -16,6 +16,7 @@ import TimelineIcon from "@mui/icons-material/Timeline";
 import ClearIcon from "@mui/icons-material/Clear";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import { jsPDF } from "jspdf";
+import { CircularProgress} from "@mui/material";
 import axios from "axios";
 
 const theme = createTheme({
@@ -93,6 +94,7 @@ const GraphCreator = () => {
   const [anchorEl, setAnchorEl] = useState(null);
   const canvasRef = useRef(null);
   const [totalCycles, setTotalCycles] = useState(0); // New state for total cycles
+  const [loading, setLoading] = useState(false);
 
   const NODE_RADIUS = 20;
   const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -106,6 +108,7 @@ const GraphCreator = () => {
 
     // Send graph data to the backend
     const checkHamiltonianCycle = async () => {
+      setLoading(true); // Start the loading spinner
       try {
 
         // Log nodes and edges for inspection
@@ -132,6 +135,7 @@ const GraphCreator = () => {
       } catch (error) {
         console.error("Error checking Hamiltonian Cycle:", error);
       }
+      setLoading(false); // Stop the loading spinner
     };
 
   const isEdgeInCycle = useCallback(
@@ -423,6 +427,7 @@ const GraphCreator = () => {
               onClick={handleCanvasClick}
             />
           </CanvasContainer>
+          {loading && <CircularProgress />} {/* Show spinner when loading */}
           {cyclePathText && (
   <div>
     <CyclePathText variant="body1">{cyclePathText}</CyclePathText>
